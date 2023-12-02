@@ -55,7 +55,7 @@ endif()
 target_link_libraries(DrawPicture PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
 # vcpkg
-target_link_libraries(DrawPicture PRIVATE opencv_ml opencv_dnn opencv_core opencv_flann)
+target_link_libraries(DrawPicture PRIVATE opencv_ml opencv_dnn opencv_core opencv_flann opencv_highgui opencv_imgproc)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

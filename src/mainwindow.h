@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <opencv2/core/core.hpp>
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
@@ -29,7 +30,23 @@ private slots:
 
     void on_pushButton_6_clicked();
 
+    void on_pushButton_7_clicked();
+
+    void on_pushButton_8_clicked();
+
+    void on_pushButton_9_clicked();
+
+    void on_pushButton_10_clicked();
+
+    cv::Mat convertToARGB32(const cv::Mat& inputImage);
+
+    void on_pushButton_11_clicked();
+
+    void onColorChange(QColor newColor);
 private:
+    void initConnect();
     Ui::MainWindow *ui;
+
+    cv::Mat showImage;
 };
 #endif // MAINWINDOW_H

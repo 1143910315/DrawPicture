@@ -15,16 +15,27 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
 # vcpkg package
 find_package(OpenCV CONFIG REQUIRED)
 
-set(TS_FILES DrawPicture_zh_CN.ts)
+# set(TS_FILES DrawPicture_zh_CN.ts)
 
-set(PROJECT_SOURCES
-        main.cpp
-        mainwindow.cpp
-        mainwindow.h
-        mainwindow.ui
-        ${TS_FILES}
+# set(PROJECT_SOURCES
+#         main.cpp
+#         mainwindow.cpp
+#         mainwindow.h
+#         mainwindow.ui
+#         pickcolorsframe.h
+#         pickcolorsframe.cpp
+#         ${TS_FILES}
+# )
+file(GLOB_RECURSE PROJECT_SOURCES
+    ${PROJECT_SOURCE_DIR}/src/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/*.c
+    ${PROJECT_SOURCE_DIR}/src/*.cc
+    ${PROJECT_SOURCE_DIR}/src/*.h
+    ${PROJECT_SOURCE_DIR}/src/*.hpp
+    ${PROJECT_SOURCE_DIR}/src/*.ui
+    ${PROJECT_SOURCE_DIR}/src/*.ts
 )
-
+message(${PROJECT_SOURCES})
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(DrawPicture
         MANUAL_FINALIZATION

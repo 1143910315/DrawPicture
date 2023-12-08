@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include <opencv2/core/core.hpp>
+#include <QRandomGenerator>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -8,6 +8,22 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow) {
     ui->setupUi(this);
+    // 设置纯色背景
+    QPalette palette;
+    palette.setColor(QPalette::Window, Qt::green);  // 以绿色为例
+    ui->label_2->setAutoFillBackground(true);
+    ui->label_2->setPalette(palette);
+    // 设置纯色背景
+    QPalette palette1;
+    palette1.setColor(QPalette::Window, Qt::black);  // 以黑色为例
+    ui->frame->setAutoFillBackground(true);
+    ui->frame->setPalette(palette1);
+    // 设置纯色背景
+    QPalette palette2;
+    palette2.setColor(QPalette::Window, Qt::gray);  // 以灰色为例
+    ui->frame_2->setAutoFillBackground(true);
+    ui->frame_2->setPalette(palette2);
+    initConnect();
 }
 
 MainWindow::~MainWindow() {
@@ -188,4 +204,132 @@ void MainWindow::on_pushButton_6_clicked() {
     cv::imshow("Original Image", inputImage);
     cv::imshow("Gray Image", grayImage);
     cv::imshow("Filtered Image", blurredImage);
+}
+
+void MainWindow::on_pushButton_7_clicked() {
+    // 读取图像
+    cv::Mat image = cv::imread("input_image.jpg", cv::IMREAD_GRAYSCALE);
+
+    // 检查图像是否成功读取
+    if (image.empty()) {
+        qDebug() << "Error: Unable to read the image.";
+    }
+
+    // 应用Canny边缘检测
+    cv::Mat edges;
+    cv::Canny(image, edges, 50, 150);
+
+    // 显示原始图像和边缘检测结果
+    cv::imshow("Original Image", image);
+    cv::imshow("Canny Edges", edges);
+}
+
+void MainWindow::on_pushButton_8_clicked() {
+    // 读取图像
+    cv::Mat image = cv::imread("input_image.jpg");
+
+    // 检查图像是否成功读取
+    if (image.empty()) {
+        qDebug() << "Error: Unable to read the image.";
+    }
+
+    // 将图像从BGR格式转换为YUV格式
+    cv::Mat yuvImage;
+    cv::cvtColor(image, yuvImage, cv::COLOR_BGR2YUV);
+
+    // 显示原始图像和转换后的图像
+    cv::imshow("Original Image", image);
+    cv::imshow("YUV Image", yuvImage);
+}
+
+void MainWindow::on_pushButton_9_clicked() {
+    // 读取图像
+    cv::Mat image = cv::imread("input_image.jpg");
+
+    // 检查图像是否成功读取
+    if (image.empty()) {
+        qDebug() << "Error: Unable to read the image.";
+    }
+    qDebug() << image.type() << CV_8UC3;
+    // 使用内存共享创建QImage（零拷贝方式）
+    QImage qtImage(static_cast<const uchar *>(image.data), image.cols, image.rows, image.step, QImage::Format_RGB888);
+    qDebug() << (qtImage.constBits() == image.data);
+
+    // 修改cv::Mat内的值
+    image.at<cv::Vec3b>(0, 0)[0] = 127;
+    image.at<cv::Vec3b>(0, 0)[1] = 127;
+    image.at<cv::Vec3b>(0, 0)[2] = 127;
+    auto temp = qtImage.rgbSwapped();
+    qDebug() << temp.format() << QImage::Format_RGB888 << QImage::Format_RGB32;
+    // 显示QImage
+    ui->label->setPixmap(QPixmap::fromImage(temp));
+}
+
+void MainWindow::on_pushButton_10_clicked() {
+    // 读取图像
+    cv::Mat image = cv::imread("input_image.jpg");
+
+    // 检查图像是否成功读取
+    if (image.empty()) {
+        qDebug() << "Error: Unable to read the image.";
+    }
+    qDebug() << image.type() << CV_8UC3;
+    showImage = convertToARGB32(image);
+    qDebug() << showImage.type() << CV_8UC4;
+    // 使用内存共享创建QImage（零拷贝方式）
+    QImage qtImage(static_cast<const uchar *>(showImage.data), showImage.cols, showImage.rows, showImage.step, QImage::Format_RGB32);
+    qDebug() << (qtImage.constBits() == showImage.data);
+
+    // auto temp = qtImage.rgbSwapped();
+    qDebug() << qtImage.format() << QImage::Format_RGB32;
+    // 显示QImage
+    ui->label->setPixmap(QPixmap::fromImage(qtImage));
+}
+
+cv::Mat MainWindow::convertToARGB32(const cv::Mat &inputImage) {
+    // 创建输出图像
+    cv::Mat outputImage(inputImage.rows, inputImage.cols, CV_8UC4);
+
+    // 转换颜色空间：BGR到BGRA
+    cv::cvtColor(inputImage, outputImage, cv::COLOR_BGR2BGRA);
+
+    // OpenCV中BGRA通道顺序是BGR0，需要进行调整
+    cv::Mat finalImage;
+    cv::cvtColor(outputImage, finalImage, cv::COLOR_BGRA2RGBA);
+
+    return finalImage;
+}
+
+void MainWindow::on_pushButton_11_clicked() {
+    // 修改cv::Mat内的值
+    // showImage.at<cv::Vec4b>(0, 0)[0] = 127;
+    // showImage.at<cv::Vec4b>(0, 0)[1] = 127;
+    // showImage.at<cv::Vec4b>(0, 0)[2] = 127;
+    // qDebug() << (ui->label->pixmap().toImage().constBits() == showImage.data);
+    int row = QRandomGenerator::global()->bounded(0, showImage.rows);
+    int col = QRandomGenerator::global()->bounded(0, showImage.cols);
+    // 修改cv::Mat内的值
+    showImage.at<cv::Vec4b>(row, col)[0] = 0;// B
+    showImage.at<cv::Vec4b>(row, col)[1] = 0;// G
+    showImage.at<cv::Vec4b>(row, col)[2] = 255;// R
+    showImage.at<cv::Vec4b>(row, col)[3] = 255;// A
+    ui->label->update(QRect(col, row, 1, 1));
+
+    // showImage.at<cv::Vec4b>(200, 100)[0] = 0;// B
+    // showImage.at<cv::Vec4b>(200, 100)[1] = 255;// G
+    // showImage.at<cv::Vec4b>(200, 100)[2] = 0;// R
+    // showImage.at<cv::Vec4b>(200, 100)[3] = 255;// A
+    // ui->label->update();
+}
+
+void MainWindow::onColorChange(QColor newColor) {
+    // 设置纯色背景
+    QPalette palette;
+    palette.setColor(QPalette::Window, newColor);
+    ui->label_2->setAutoFillBackground(true);
+    ui->label_2->setPalette(palette);
+}
+
+void MainWindow::initConnect() {
+    connect(ui->frame_2, &PickColorsFrame::colorChangeEvent, this, &MainWindow::onColorChange);
 }

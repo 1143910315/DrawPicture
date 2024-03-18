@@ -15,7 +15,10 @@ void PickColorsFrame::mousePressEvent(QMouseEvent *event) {
 
 void PickColorsFrame::mouseReleaseEvent(QMouseEvent *event) {
     event->accept();
-    startRecord = false;
+    if (startRecord) {
+        startRecord = false;
+        emit selectColorEndEvent(lastColor);
+    }
 }
 
 void PickColorsFrame::mouseMoveEvent(QMouseEvent *event) {
@@ -26,7 +29,7 @@ void PickColorsFrame::mouseMoveEvent(QMouseEvent *event) {
         QScreen *screen = QGuiApplication::screenAt(cursorPos);
         // 获取屏幕上的像素颜色
         QPixmap screenshot = screen->grabWindow(0, cursorPos.x(), cursorPos.y(), 1, 1);
-        QColor pixelColor = screenshot.toImage().pixel(0, 0);
-        emit colorChangeEvent(pixelColor);
+        lastColor = screenshot.toImage().pixel(0, 0);
+        emit colorChangeEvent(lastColor);
     }
 }

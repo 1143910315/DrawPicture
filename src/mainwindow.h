@@ -3,7 +3,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <QMainWindow>
-
+#include "similarityfiltering.h"
 QT_BEGIN_NAMESPACE
 namespace Ui {
     class MainWindow;
@@ -43,10 +43,29 @@ private slots:
     void on_pushButton_11_clicked();
 
     void onColorChange(QColor newColor);
+
+    void onSelectColorEnd(QColor newColor);
+
+    void on_horizontalSlider_valueChanged(int value);
+
+    void onCheckAreaDirection(QPoint point);
+    void on_pushButton_12_clicked();
+
 private:
     void initConnect();
+
+    void binarization();
+
     Ui::MainWindow *ui;
 
     cv::Mat showImage;
+
+    cv::Mat realImage;
+
+    cv::Mat yuvImage;
+
+    SimilarityFiltering *similarityFiltering = nullptr;
+
+    QColor baseColor;
 };
 #endif // MAINWINDOW_H

@@ -87,12 +87,19 @@
       <item>
        <widget class="QPushButton" name="pushButton_10">
         <property name="text">
-         <string>PushButton</string>
+         <string>加载图像</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="pushButton_11">
+        <property name="text">
+         <string>PushButton</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButton_12">
         <property name="text">
          <string>PushButton</string>
         </property>
@@ -190,22 +197,22 @@
        </widget>
       </item>
       <item>
-       <spacer name="horizontalSpacer">
+       <widget class="QSlider" name="horizontalSlider">
+        <property name="maximum">
+         <number>195075</number>
+        </property>
+        <property name="pageStep">
+         <number>100</number>
+        </property>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
+       </widget>
       </item>
      </layout>
     </item>
     <item>
-     <widget class="QLabel" name="label">
+     <widget class="PositionLabel" name="label">
       <property name="text">
        <string/>
       </property>
@@ -231,6 +238,11 @@
    <extends>QFrame</extends>
    <header>pickcolorsframe.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PositionLabel</class>
+   <extends>QLabel</extends>
+   <header>positionlabel.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

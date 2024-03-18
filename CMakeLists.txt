@@ -35,11 +35,16 @@ file(GLOB_RECURSE PROJECT_SOURCES
     ${PROJECT_SOURCE_DIR}/src/*.ui
     ${PROJECT_SOURCE_DIR}/src/*.ts
 )
-message(${PROJECT_SOURCES})
+# 添加资源文件
+qt6_add_resources(RESOURCE_FILES
+    Resource.qrc
+)
+# message(${PROJECT_SOURCES})
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(DrawPicture
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        ${RESOURCE_FILES}
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET DrawPicture APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

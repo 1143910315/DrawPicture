@@ -14,8 +14,10 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
 signals:
     void colorChangeEvent(QColor color);
+    void selectColorEndEvent(QColor color);
 private:
     bool startRecord = false;
+    QColor lastColor;
 };
 
 #endif // PICKCOLORSFRAME_H

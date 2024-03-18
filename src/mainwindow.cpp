@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include <QRandomGenerator>
+#include <QtMath>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
@@ -274,7 +275,10 @@ void MainWindow::on_pushButton_10_clicked() {
         qDebug() << "Error: Unable to read the image.";
     }
     qDebug() << image.type() << CV_8UC3;
+    // 将图像从BGR格式转换为YUV格式
+    cv::cvtColor(image, yuvImage, cv::COLOR_BGR2YUV);
     showImage = convertToARGB32(image);
+    showImage.copyTo(realImage);
     qDebug() << showImage.type() << CV_8UC4;
     // 使用内存共享创建QImage（零拷贝方式）
     QImage qtImage(static_cast<const uchar *>(showImage.data), showImage.cols, showImage.rows, showImage.step, QImage::Format_RGB32);
@@ -330,6 +334,165 @@ void MainWindow::onColorChange(QColor newColor) {
     ui->label_2->setPalette(palette);
 }
 
+void MainWindow::onSelectColorEnd(QColor newColor) {
+    onColorChange(newColor);
+    baseColor = newColor;
+    binarization();
+}
+
 void MainWindow::initConnect() {
     connect(ui->frame_2, &PickColorsFrame::colorChangeEvent, this, &MainWindow::onColorChange);
+    connect(ui->frame_2, &PickColorsFrame::selectColorEndEvent, this, &MainWindow::onSelectColorEnd);
+    connect(ui->label, &PositionLabel::checkAreaDirectionEvent, this, &MainWindow::onCheckAreaDirection);
+}
+
+void MainWindow::binarization() {
+    // 创建一个RGB颜色
+    cv::Vec3b rgbColor(baseColor.red(), baseColor.green(), baseColor.blue());
+
+    // 将RGB颜色转换为YUV颜色
+    cv::Mat rgbMat(1, 1, CV_8UC3, rgbColor);
+    cv::Mat yuvMat;
+
+    cv::cvtColor(rgbMat, yuvMat, cv::COLOR_RGB2YUV);
+
+    // 提取YUV分量
+    // int y = yuvMat.at<cv::Vec3b>(0, 0)[0];
+    // int u = yuvMat.at<cv::Vec3b>(0, 0)[1];
+    // int v = yuvMat.at<cv::Vec3b>(0, 0)[2];
+    if (similarityFiltering) {
+        similarityFiltering->stop();
+        similarityFiltering->wait();
+        similarityFiltering->deleteLater();
+    }
+    similarityFiltering = new SimilarityFiltering(&yuvImage, &showImage, &realImage, yuvMat.at<cv::Vec3b>(0, 0), ui->horizontalSlider->value());
+    similarityFiltering->start();
+}
+
+void MainWindow::on_horizontalSlider_valueChanged(int value) {
+    binarization();
+}
+
+void MainWindow::onCheckAreaDirection(QPoint point) {
+    auto startX = point.x();
+    auto startY = point.y();
+    auto topX = point.x();
+    auto topY = point.y();
+    auto bottomX = point.x();
+    auto bottomY = point.y();
+    auto leftX = point.x();
+    auto leftY = point.y();
+    auto rightX = point.x();
+    auto rightY = point.y();
+    auto baseColor = yuvImage.at<cv::Vec3b>(startY, startX);
+    auto tempColor = cv::Vec3b();
+    auto bgraColor = cv::Vec4b();
+    auto count = 0;
+    auto difference = 0;
+    auto leftRun = false;
+    auto topRun = false;
+    auto rightRun = false;
+    auto bottomRun = false;
+    auto findCircular = false;
+    auto r = 3;
+    if (topY > 0) {
+        topY--;
+        count++;
+        tempColor = yuvImage.at<cv::Vec3b>(topY, topX);
+        difference += (baseColor[0] - tempColor[0]) * (baseColor[0] - tempColor[0]) + (baseColor[1] - tempColor[1]) * (baseColor[1] - tempColor[1]) + (baseColor[2] - tempColor[2]) * (baseColor[2] - tempColor[2]);
+        bgraColor = realImage.at<cv::Vec4b>(topY, topX);
+        qDebug() << "Top" << difference << topX << topY << bgraColor[0] << bgraColor[1] << bgraColor[2];
+        topRun = true;
+    }
+    if (leftX > 0) {
+        leftX--;
+        count++;
+        tempColor = yuvImage.at<cv::Vec3b>(leftY, leftX);
+        difference += (baseColor[0] - tempColor[0]) * (baseColor[0] - tempColor[0]) + (baseColor[1] - tempColor[1]) * (baseColor[1] - tempColor[1]) + (baseColor[2] - tempColor[2]) * (baseColor[2] - tempColor[2]);
+        leftRun = true;
+    }
+    if (bottomY < yuvImage.rows - 1) {
+        bottomY++;
+        count++;
+        tempColor = yuvImage.at<cv::Vec3b>(bottomY, bottomX);
+        difference += (baseColor[0] - tempColor[0]) * (baseColor[0] - tempColor[0]) + (baseColor[1] - tempColor[1]) * (baseColor[1] - tempColor[1]) + (baseColor[2] - tempColor[2]) * (baseColor[2] - tempColor[2]);
+        bottomRun = true;
+    }
+    if (rightX < yuvImage.cols - 1) {
+        rightX++;
+        count++;
+        tempColor = yuvImage.at<cv::Vec3b>(rightY, rightX);
+        difference += (baseColor[0] - tempColor[0]) * (baseColor[0] - tempColor[0]) + (baseColor[1] - tempColor[1]) * (baseColor[1] - tempColor[1]) + (baseColor[2] - tempColor[2]) * (baseColor[2] - tempColor[2]);
+        rightRun = true;
+    }
+    if (count > 0) {
+        difference = difference * 2 / count + 2000;
+    }
+    while (!findCircular) {
+        for (int x = -r; x <= r; ++x) {
+            auto y = 0;
+            if (x == -r||x == r) {
+            } else if (x == 0) {
+                y = r;
+            } else {
+                y = qSqrt(r * r - x * x);
+            }
+            auto topColor = yuvImage.at<cv::Vec3b>(startY - y, startX + x);
+            auto topDifference = (baseColor[0] - topColor[0]) * (baseColor[0] - topColor[0]) + (baseColor[1] - topColor[1]) * (baseColor[1] - topColor[1]) + (baseColor[2] - topColor[2]) * (baseColor[2] - topColor[2]);
+            qDebug() << (topDifference < difference) << startX + x << startY - y << "↑" << topDifference;
+            auto bottomColor = yuvImage.at<cv::Vec3b>(startY + y, startX + x);
+            auto bottomDifference = (baseColor[0] - bottomColor[0]) * (baseColor[0] - bottomColor[0]) + (baseColor[1] - bottomColor[1]) * (baseColor[1] - bottomColor[1]) + (baseColor[2] - bottomColor[2]) * (baseColor[2] - bottomColor[2]);
+            qDebug() << (bottomDifference < difference) << startX + x << startY + y << "↓" << bottomDifference;
+            if (topDifference < difference) {
+            }
+        }
+        qDebug() << "↑" << r;
+        r += 2;
+    }
+    // while ((leftRun||rightRun)&&(topRun||bottomRun)) {
+    // if (topRun) {
+    // if (topY > 0) {
+    // topY--;
+    // count++;
+    // tempColor = yuvImage.at<cv::Vec3b>(topY, topX);
+    // difference += (baseColor[0] - tempColor[0]) * (baseColor[0] - tempColor[0]) + (baseColor[1] - tempColor[1]) * (baseColor[1] - tempColor[1]) + (baseColor[2] - tempColor[2]) * (baseColor[2] - tempColor[2]);
+    // } else {
+    // topRun = false;
+    // }
+    // }
+    // if (leftRun) {
+    // if (leftX > 0) {
+    // leftX--;
+    // count++;
+    // tempColor = yuvImage.at<cv::Vec3b>(leftY, leftX);
+    // difference += (baseColor[0] - tempColor[0]) * (baseColor[0] - tempColor[0]) + (baseColor[1] - tempColor[1]) * (baseColor[1] - tempColor[1]) + (baseColor[2] - tempColor[2]) * (baseColor[2] - tempColor[2]);
+    // } else {
+    // leftRun = false;
+    // }
+    // }
+    // if (bottomRun) {
+    // if (bottomY < yuvImage.rows - 1) {
+    // bottomY++;
+    // count++;
+    // tempColor = yuvImage.at<cv::Vec3b>(bottomY, bottomX);
+    // difference += (baseColor[0] - tempColor[0]) * (baseColor[0] - tempColor[0]) + (baseColor[1] - tempColor[1]) * (baseColor[1] - tempColor[1]) + (baseColor[2] - tempColor[2]) * (baseColor[2] - tempColor[2]);
+    // } else {
+    // bottomRun = false;
+    // }
+    // }
+    // if (rightRun) {
+    // if (rightX < yuvImage.cols - 1) {
+    // rightX++;
+    // count++;
+    // tempColor = yuvImage.at<cv::Vec3b>(rightY, rightX);
+    // difference += (baseColor[0] - tempColor[0]) * (baseColor[0] - tempColor[0]) + (baseColor[1] - tempColor[1]) * (baseColor[1] - tempColor[1]) + (baseColor[2] - tempColor[2]) * (baseColor[2] - tempColor[2]);
+    // } else {
+    // rightRun = false;
+    // }
+    // }
+    // }
+}
+
+void MainWindow::on_pushButton_12_clicked() {
+    onCheckAreaDirection({ 481, 481 });
 }
